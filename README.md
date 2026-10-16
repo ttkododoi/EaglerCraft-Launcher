@@ -121,6 +121,7 @@ js/client-bridge.js        Optional client-source integration utility (not activ
 docs/gx-reference.md       Source inspection and confirmed entry-point notes
 tests/state.test.js        Settings validation/persistence tests
 tests/game-player.test.js  Iframe lifecycle and URL validation tests
+scripts/check-layout.mjs   Optional 12-viewport browser layout regression suite
 tests/catalog.test.js      Version/runtime/URL regression tests
 clients/README.md          Legacy local-build note (unused by this launcher)
 package.json               Dependency-free start/test commands
@@ -137,8 +138,23 @@ node --check js/preview.js
 
 Test coverage includes all 14 exact URLs, WASM-only releases, invalid input,
 settings migration, bounds, corrupt/blocked storage and independent defaults.
-Browser UI tests, when available, cover selection, runtime switching, library
-search, persistence, iframe lifecycle, responsive overflow, and preview interactions.
+The launcher shell is viewport-bounded. The launch controls stay visible;
+library/settings/help pages scroll within the content area. Mobile and short
+landscape windows use compact navigation and reduced hero decoration.
+
+Run the optional browser layout regression suite against the running server:
+
+```sh
+npm install --no-save --package-lock=false playwright
+npx playwright install chromium
+npm run test:layout
+```
+
+It checks 12 desktop/mobile/landscape viewports, launch-control visibility, hero
+text overlap, internal page scrolling, iframe sizing, and close-button placement.
+Set `LAUNCHER_URL` for a different server URL, or `CHROMIUM_EXECUTABLE_PATH` for
+an existing browser binary. Game responses are mocked; this is not a live GX
+gameplay test. No browser dependencies are needed to serve the application.
 Remote games require real-browser testing on the user's network and are not
 validated by local unit tests.
 

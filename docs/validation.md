@@ -32,3 +32,30 @@ runtime dependencies. Screenshots and downloaded reference source are not shippe
 - Cross-origin load events are treated only as page-load notifications, never
   as proof that the game booted successfully. A 20-second hint offers a new-tab
   fallback when loading takes longer. The fallback remains visible throughout.
+
+## Layout repair
+
+Reproduced before the fix:
+
+- At 1366×768, the document grew to 841px high.
+- At 390×844, the document grew to 1073px; Launch was below the viewport.
+- At 320×568, the document grew to 1169px.
+- At 844×390 landscape, the document grew to 799px.
+
+Replaced the accumulated layout rules with a readable, viewport-bounded grid
+shell, explicit shrinking rows, internal scrolling for non-game pages, aligned
+launch controls, compact phone/landscape hero content, and grid-based dialogs.
+The settings icon has an explicit accessible name.
+
+` scripts/check-layout.mjs ` passes at 1920×1080, 1440×900, 1366×768, 1280×600,
+1024×600, 900×600, 768×1024, 390×844, 360×640, 320×568, 844×390, and 667×375:
+
+- No horizontal or vertical document overflow; launch/version/runtime controls
+  remain within the viewport, with at least 40px-high targets.
+- Hero copy does not overlap its footer.
+- Library/modules/settings/help remain bounded and independently scrollable.
+- Game frame exactly fills the remaining player stage; toolbar close stays
+  visible, and player does not overflow.
+- No browser JavaScript errors. Remote game responses mocked.
+
+Updated desktop, small-phone, and player screenshots were visually reviewed.
