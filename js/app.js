@@ -1,12 +1,14 @@
 import {modules,load,normalize} from './state.js';
 import {versions,getVersion,resolveRuntime,gameUrl} from './catalog.js';
 import {startPreview} from './preview.js';
+import {createGamePlayer} from './game-player.js';
 const $=s=>document.querySelector(s);
 let settings;try{settings=load(localStorage);}catch{settings=normalize(null);}
 // Migrate the old demo-only selection to a real launch profile.
 if(settings.profile==='demo')settings.profile='1.8.8';
 let stopPreview=null,toastTimer;
 const dialog=$('#game-dialog'),canvas=$('#preview');
+const remotePlayer=createGamePlayer(document,toast);
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),6000);}
 function save(){try{localStorage.setItem('obsidian.settings',JSON.stringify(settings));}catch{toast('Storage unavailable. Preferences will last for this session only.');}}
 function renderModules(){for(const target of ['#modules','#game-modules']){
@@ -19,7 +21,7 @@ function renderLibrary(){const query=$('#version-search').value.trim().toLowerCa
  const art=document.createElement('div');art.className='card-art';art.setAttribute('aria-hidden','true');const body=document.createElement('div');body.className='card-body';const tag=document.createElement('span');tag.className='version-tag';tag.textContent=v.tag;const title=document.createElement('h3');title.textContent=v.label;const desc=document.createElement('p');desc.textContent=v.description;const actions=document.createElement('div');actions.className='card-actions';for(const runtime of v.runtimes){const button=document.createElement('button');button.className='build-button';button.textContent=`${runtime==='js'?'JAVASCRIPT':'WASM'} →`;button.setAttribute('aria-label',`Select ${v.id} ${runtime==='js'?'JavaScript':'WebAssembly'}`);button.onclick=()=>{select(v.id,runtime);navigate('play');$('#launch').focus();};actions.append(button);}body.append(tag,title,desc,actions);card.append(art,body);if(v.id===settings.profile){const badge=document.createElement('span');badge.className='selected-label';badge.textContent='SELECTED';card.append(badge);}$('#version-library').append(card);}
 }
 function syncLaunch(){const version=getVersion(settings.profile);const runtime=resolveRuntime(version.id,settings.runtime);settings.runtime=runtime;$('#version-select').value=version.id;document.querySelectorAll('[data-runtime]').forEach(button=>{button.disabled=!version.runtimes.includes(button.dataset.runtime);button.setAttribute('aria-pressed',String(runtime===button.dataset.runtime));button.title=button.disabled?'This version is available in WebAssembly only':'';});
-const url=gameUrl(version.id,runtime);for(const selector of ['#launch','#hero-launch']){$(selector).href=url;$(selector).setAttribute('aria-label',`Launch Eaglercraft ${version.id} ${runtime==='js'?'JavaScript':'WebAssembly'} on GX Launcher (opens a new tab)`);}
+const url=gameUrl(version.id,runtime);for(const selector of ['#launch','#hero-launch']){$(selector).href=url;$(selector).setAttribute('aria-label',`Launch Eaglercraft ${version.id} ${runtime==='js'?'JavaScript':'WebAssembly'} inside the launcher`);}
 $('#selected-name').textContent=`${version.id} / ${runtime.toUpperCase()}`;$('#selected-description').textContent='GX-HOSTED BUILD';$('#runtime-note').textContent=runtime==='wasm'?`${version.runtimes.length===1?'WASM-only release. ':''}Requires a compatible browser; newer Wasm features may be needed.`:'JavaScript build selected. No local game files required.';
 }
 function select(id,runtime=settings.runtime){if(!getVersion(id))return;settings.profile=id;settings.runtime=resolveRuntime(id,runtime);save();syncLaunch();renderLibrary();}
@@ -35,4 +37,10 @@ document.addEventListener('keydown',e=>{if(dialog.open&&e.code==='ShiftRight'&&!
 function cleanup(){stopPreview?.();stopPreview=null;$('#hud').textContent='';$('#game-menu').hidden=true;if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});}
 dialog.addEventListener('close',cleanup);$('#close-game').onclick=()=>dialog.close();$('#fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>toast('Unable to leave fullscreen.'));else dialog.requestFullscreen?.().catch(()=>toast('Fullscreen is not available in this browser.'));};
 $('#open-preview').onclick=()=>{if(dialog.open)return;dialog.showModal();stopPreview=startPreview(canvas,()=>settings,text=>$('#hud').textContent=text);};
+for(const selector of ['#launch','#hero-launch'])$(selector).addEventListener('click',event=>{
+  // Preserve native new-tab/window gestures on the underlying fallback link.
+  if(event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+  event.preventDefault();
+  remotePlayer.open(settings.profile,settings.runtime);
+});
 sync();navigate('play');

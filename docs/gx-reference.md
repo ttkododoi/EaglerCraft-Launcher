@@ -41,6 +41,8 @@ All URLs use HTTPS, under `https://gx-launcher.github.io/game/`:
 The new layout is independently written, informed by that structure; no GX
 stylesheet, JavaScript, logos, game files, or background art are redistributed.
 `assets/world.svg` is original procedural vector artwork authored for this repo.
-No remote game HTML is fetched, rehosted, injected, or embedded. Ordinary
-`target="_blank" rel="noopener noreferrer"` links open the chosen build directly.
+Remote game pages are now embedded in a cross-origin iframe at the user's
+request. No game HTML is downloaded for redistribution, rehosted, or injected.
+An ordinary `target="_blank" rel="noopener noreferrer"` link is also available
+as a fallback. Closing the embedded player destroys its browsing context.
 Remote uptime, game correctness, and browser compatibility are not guaranteed.

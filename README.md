@@ -1,8 +1,8 @@
 # Obsidian / Eaglercraft launch hub
 
 A dependency-free static launcher with a GX-informed layout, **8 versions / 14
-builds**, direct external game links, persistent settings, and an original local
-2D module preview. No game binaries, iframe, backend, or remote fonts are used.
+builds**, embedded GX-hosted games, persistent settings, and an original local
+2D module preview. No game binaries, backend, or remote fonts are bundled.
 
 ## Run
 
@@ -19,8 +19,9 @@ installation is needed. Python 3 serves the site; Node 18+ runs the tests.
 1. Select **Game** in the sidebar.
 2. Choose a release from the bottom **Game version** dropdown.
 3. Choose **JavaScript** or **WebAssembly**. JS is disabled for 26.2 and 26.3.
-4. Click **Launch game** or **Play now**. Both open the same selected build
-   directly on `https://gx-launcher.github.io` in a new tab. No iframe is involved.
+4. Click **Launch game** or **Play now**. Both open the selected build
+   from `https://gx-launcher.github.io` in an iframe inside the launcher.
+   Use the player toolbar to reload, enter fullscreen, close, or open a new tab.
 5. Alternatively, search the **Versions** library and choose a runtime there.
    This selects the build and returns to Game for launch.
 
@@ -40,7 +41,11 @@ and browser support are controlled by GX, not this launcher. Wasm support alone
 is not sufficient for all builds; some require newer features or appropriate
 host headers. Try JS where offered if WASM fails. The launcher does not make
 unreliable cross-origin fetch probes or claim a game is online just because its
-file exists in Git. External links use `noopener noreferrer`.
+file exists in Git. The new-tab fallback links use `noopener noreferrer`. If framing is blocked by
+the remote host or a WASM build needs a top-level context, use that fallback.
+The iframe allows fullscreen, autoplay and gamepad; it is intentionally not
+sandboxed to preserve game compatibility. Normal cross-origin DOM restrictions
+still apply. Closing the player destroys the iframe and stops its game.
 
 ## Layout reference
 
@@ -79,8 +84,8 @@ Use enhancements only in single-player or on servers explicitly permitting them.
 ## Real modded-client integration
 
 `js/client-bridge.js` remains an optional source-integration utility; it is not
-used by the external-link launcher. A future same-origin parent host can pair
-it with a source-built client under your control. It cannot attach to GX tabs.
+used by the cross-origin iframe player. A future same-origin parent host can pair
+it with a source-built client under your control. It cannot attach to GX frames or tabs.
 The bridge validates same origin/source, sends `obsidian:v1` ready/menu messages,
 accepts configure messages, and returns a cleanup function. Register once after
 your actual engine hooks exist. It expects an adapter with `supportedModules`
@@ -107,13 +112,15 @@ bypass anti-cheat, server-side anti-X-Ray, or browser origin restrictions.
 index.html                 Launcher shell, game/library/settings/help, preview dialog
 assets/style.css           Responsive charcoal/red UI
 assets/world.svg           Original block landscape artwork
-js/app.js                  Navigation, catalog selection, direct launch links, preview
+js/app.js                  Navigation, catalog selection, embedded launch, preview
 js/catalog.js              Eight allowlisted versions and 14 HTTPS launch URLs
+js/game-player.js          Iframe lifecycle, loading hint, reload and fullscreen
 js/state.js                Validated preferences and module definitions
 js/preview.js              Original 2D demo engine and eight module implementations
 js/client-bridge.js        Optional client-source integration utility (not active)
 docs/gx-reference.md       Source inspection and confirmed entry-point notes
 tests/state.test.js        Settings validation/persistence tests
+tests/game-player.test.js  Iframe lifecycle and URL validation tests
 tests/catalog.test.js      Version/runtime/URL regression tests
 clients/README.md          Legacy local-build note (unused by this launcher)
 package.json               Dependency-free start/test commands
@@ -131,7 +138,7 @@ node --check js/preview.js
 Test coverage includes all 14 exact URLs, WASM-only releases, invalid input,
 settings migration, bounds, corrupt/blocked storage and independent defaults.
 Browser UI tests, when available, cover selection, runtime switching, library
-search, persistence, no iframe, responsive overflow, and preview interactions.
+search, persistence, iframe lifecycle, responsive overflow, and preview interactions.
 Remote games require real-browser testing on the user's network and are not
 validated by local unit tests.
 
